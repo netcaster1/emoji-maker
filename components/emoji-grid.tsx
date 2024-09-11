@@ -1,31 +1,60 @@
 'use client'
 
-import { useState } from 'react'
 import { Card } from './ui/card'
 import { Download, Heart } from 'lucide-react'
+import { useEmoji } from '../contexts/emoji-context'
 
-type Emoji = {
-  id: string
-  url: string
-  liked: boolean
+// Add this type declaration at the top of the file
+declare global {
+    interface Window {
+      showSaveFilePicker: (options: SaveFilePickerOptions) => Promise<FileSystemFileHandle>;
+    }
+  }
+
+interface SaveFilePickerOptions {
+  suggestedName?: string;
+  types?: Array<{
+    description: string;
+    accept: Record<string, string[]>;
+  }>;
 }
 
 export default function EmojiGrid() {
-  const [emojis, setEmojis] = useState<Emoji[]>([
-    { id: '1', url: 'https://placeholder.com/150x150', liked: false },
-    { id: '2', url: 'https://placeholder.com/150x150', liked: true },
-    // Add more placeholder emojis as needed
-  ])
+  const { emojis, toggleLike } = useEmoji()
 
-  const handleLike = (id: string) => {
-    setEmojis(emojis.map(emoji => 
-      emoji.id === id ? { ...emoji, liked: !emoji.liked } : emoji
-    ))
-  }
+  const handleDownload = async (url: string) => {
+    try {
+      const response = await fetch(`/api/download-emoji?url=${encodeURIComponent(url)}`)
+      if (!response.ok) throw new Error('Download failed')
+      
+      const blob = await response.blob()
 
-  const handleDownload = (url: string) => {
-    // TODO: Implement download functionality
-    console.log('Downloading:', url)
+      // Check if the browser supports the showSaveFilePicker API
+      if ('showSaveFilePicker' in window) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: 'emoji.png',
+          types: [{
+            description: 'PNG Files',
+            accept: { 'image/png': ['.png'] },
+          }],
+        })
+        const writable = await handle.createWritable()
+        await writable.write(blob)
+        await writable.close()
+      } else {
+        // Fallback for browsers that don't support showSaveFilePicker
+        const blobUrl = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = blobUrl
+        link.download = 'emoji.png'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(blobUrl)
+      }
+    } catch (error) {
+      console.error('Error downloading emoji:', error)
+    }
   }
 
   return (
@@ -37,7 +66,7 @@ export default function EmojiGrid() {
             <button onClick={() => handleDownload(emoji.url)} className="p-2 bg-white rounded-full">
               <Download className="w-5 h-5" />
             </button>
-            <button onClick={() => handleLike(emoji.id)} className="p-2 bg-white rounded-full">
+            <button onClick={() => toggleLike(emoji.id)} className="p-2 bg-white rounded-full">
               <Heart className={`w-5 h-5 ${emoji.liked ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
           </div>
