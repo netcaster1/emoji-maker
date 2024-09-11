@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Heart, Download } from 'lucide-react'
 import { Button } from './ui/button'
 import { toast } from 'react-hot-toast' // Make sure to install and set up react-hot-toast
+import * as Tooltip from '@radix-ui/react-tooltip';
 
 interface Emoji {
   id: number
@@ -98,44 +99,64 @@ export default function EmojiGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {emojis.map((emoji) => (
-        <div key={emoji.id} className="relative aspect-square group">
-          <Image
-            src={emoji.image_url}
-            alt={emoji.prompt}
-            layout="fill"
-            objectFit="cover"
-            className="rounded-lg"
-            onError={() => {
-              console.error(`Failed to load image: ${emoji.image_url}`)
-              toast.error(`Failed to load emoji image`)
-            }}
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <p className="text-white text-sm mb-2 px-2 text-center">{emoji.prompt}</p>
-            <div className="flex space-x-2">
+    <Tooltip.Provider>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {emojis.map((emoji) => (
+          <div key={emoji.id} className="flex flex-col">
+            <div className="relative aspect-square group">
+              <Image
+                src={emoji.image_url}
+                alt={emoji.prompt}
+                layout="fill"
+                objectFit="cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                className="rounded-lg"
+                onError={() => {
+                  console.error(`Failed to load image: ${emoji.image_url}`);
+                  toast.error(`Failed to load emoji image`);
+                }}
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleDownload(emoji.image_url, emoji.prompt)}
+                  className="text-white hover:text-blue-500"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="mt-2 flex justify-between items-center px-1">
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <p className="text-sm font-medium text-gray-700 truncate flex-grow cursor-help">
+                    {emoji.prompt}
+                  </p>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    className="bg-white p-2 rounded shadow-lg z-50 max-w-xs text-sm text-gray-800"
+                    sideOffset={5}
+                  >
+                    {emoji.prompt}
+                    <Tooltip.Arrow className="fill-white" />
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => handleLike(emoji.id)}
-                className="text-white hover:text-red-500"
+                className="text-gray-500 hover:text-red-500 p-0"
               >
-                <Heart className={`h-4 w-4 mr-1 ${emoji.likes_count > 0 ? 'fill-current text-red-500' : ''}`} />
-                {emoji.likes_count}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleDownload(emoji.image_url, emoji.prompt)}
-                className="text-white hover:text-blue-500"
-              >
-                <Download className="h-4 w-4" />
+                <Heart className={`h-4 w-4 ${emoji.likes_count > 0 ? 'fill-current text-red-500' : ''}`} />
+                <span className="ml-1 text-xs">{emoji.likes_count}</span>
               </Button>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </Tooltip.Provider>
   )
 }
