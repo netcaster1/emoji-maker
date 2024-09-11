@@ -26,6 +26,7 @@ export default function EmojiGrid() {
       } catch (error) {
         console.error('Error loading emojis:', error)
         setError('Failed to load emojis')
+        toast.error('Failed to load emojis')
       }
     }
 
@@ -40,6 +41,7 @@ export default function EmojiGrid() {
           ? { ...emoji, likes_count: response.likes_count } 
           : emoji
       ))
+      toast.success(response.likes_count > 0 ? 'Emoji liked!' : 'Emoji unliked!')
     } catch (error) {
       console.error('Error liking/unliking emoji:', error)
       toast.error('Failed to update like status')
@@ -92,11 +94,11 @@ export default function EmojiGrid() {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>
+    return <div className="text-red-500 text-center my-4">{error}</div>
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       {emojis.map((emoji) => (
         <div key={emoji.id} className="relative aspect-square group">
           <Image
@@ -105,10 +107,13 @@ export default function EmojiGrid() {
             layout="fill"
             objectFit="cover"
             className="rounded-lg"
-            onError={() => console.error(`Failed to load image: ${emoji.image_url}`)}
+            onError={() => {
+              console.error(`Failed to load image: ${emoji.image_url}`)
+              toast.error(`Failed to load emoji image`)
+            }}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <p className="text-white text-sm mb-2">{emoji.prompt}</p>
+            <p className="text-white text-sm mb-2 px-2 text-center">{emoji.prompt}</p>
             <div className="flex space-x-2">
               <Button
                 size="sm"
@@ -116,7 +121,7 @@ export default function EmojiGrid() {
                 onClick={() => handleLike(emoji.id)}
                 className="text-white hover:text-red-500"
               >
-                <Heart className="h-4 w-4 mr-1" />
+                <Heart className={`h-4 w-4 mr-1 ${emoji.likes_count > 0 ? 'fill-current text-red-500' : ''}`} />
                 {emoji.likes_count}
               </Button>
               <Button
