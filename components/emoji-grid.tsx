@@ -34,14 +34,15 @@ export default function EmojiGrid() {
 
   const handleLike = async (emojiId: number) => {
     try {
-      await likeEmoji(emojiId)
+      const response = await likeEmoji(emojiId)
       setEmojis(emojis.map(emoji => 
         emoji.id === emojiId 
-          ? { ...emoji, likes_count: emoji.likes_count + 1 } 
+          ? { ...emoji, likes_count: response.likes_count } 
           : emoji
       ))
     } catch (error) {
-      console.error('Error liking emoji:', error)
+      console.error('Error liking/unliking emoji:', error)
+      toast.error('Failed to update like status')
     }
   }
 

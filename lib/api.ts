@@ -27,7 +27,7 @@ export async function likeEmoji(emojiId: number) {
     method: 'POST',
   })
   if (!response.ok) {
-    throw new Error('Failed to like emoji')
+    throw new Error('Failed to update emoji like status')
   }
   return response.json()
 }
