@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/headers";
 import { AuthWrapper } from '@/components/AuthWrapper';
+import { Toaster } from 'react-hot-toast';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -35,6 +36,7 @@ export default function RootLayout({
           <AuthWrapper>
             <Header />
             {children}
+            <Toaster />
           </AuthWrapper>
         </body>
       </html>

@@ -1,15 +1,21 @@
+'use client'
+
+import { useState } from 'react'
 import EmojiGenerator from '../components/emoji-generator'
 import EmojiGrid from '../components/emoji-grid'
-import { EmojiProvider } from '../contexts/emoji-context'
 
 export default function Home() {
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleNewEmoji = () => {
+    setRefreshKey(prevKey => prevKey + 1)
+  }
+
   return (
-    <EmojiProvider>
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8 text-center">Emoji Maker</h1>
-        <EmojiGenerator />
-        <EmojiGrid />
-      </main>
-    </EmojiProvider>
+    <main className="container mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">Emoji Maker</h1>
+      <EmojiGenerator onNewEmoji={handleNewEmoji} />
+      <EmojiGrid key={refreshKey} />
+    </main>
   )
 }

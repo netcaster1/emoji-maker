@@ -5,42 +5,23 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Card } from './ui/card'
 import { Loader2 } from 'lucide-react'
-import { useEmoji } from '../contexts/emoji-context'
+import { generateEmoji, fetchEmojis } from '@/lib/api'
 
-export default function EmojiGenerator() {
+export default function EmojiGenerator({ onNewEmoji }: { onNewEmoji: () => void }) {
   const [prompt, setPrompt] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedEmoji, setGeneratedEmoji] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const { addEmoji } = useEmoji()
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsGenerating(true)
-    setError(null)
-
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/generate-emoji', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        setGeneratedEmoji(data.imageUrl)
-        addEmoji(data.imageUrl)
-      } else {
-        setError(data.error || 'Failed to generate emoji')
-      }
+      await generateEmoji(prompt)
+      onNewEmoji() // Call this function to trigger a refresh of the emoji grid
     } catch (error) {
       console.error('Error generating emoji:', error)
-      setError('An unexpected error occurred')
     } finally {
-      setIsGenerating(false)
+      setIsLoading(false)
+      setPrompt('') // Clear the input after generation
     }
   }
 
@@ -54,8 +35,8 @@ export default function EmojiGenerator() {
           onChange={(e) => setPrompt(e.target.value)}
           className="w-full"
         />
-        <Button type="submit" disabled={isGenerating} className="w-full">
-          {isGenerating ? (
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Generating...
@@ -65,14 +46,6 @@ export default function EmojiGenerator() {
           )}
         </Button>
       </form>
-      {error && (
-        <p className="mt-4 text-red-500">{error}</p>
-      )}
-      {generatedEmoji && (
-        <div className="mt-4 flex justify-center">
-          <img src={generatedEmoji} alt="Generated Emoji" className="w-32 h-32" />
-        </div>
-      )}
     </Card>
   )
 }
