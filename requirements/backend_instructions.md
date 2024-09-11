@@ -1,5 +1,3 @@
-
-
 ```
 # Project overview
 Use this guide to build backend for the web app of emoji maker
@@ -34,6 +32,44 @@ TABLE emoji_likes (
   emoji_id BIGINT REFERENCES emojis(id),
   PRIMARY KEY (user_id, emoji_id)
 );
+
+CREATE OR REPLACE FUNCTION update_emoji_likes_count(emoji_id BIGINT)
+RETURNS TABLE (likes_count BIGINT) AS $$
+DECLARE
+  new_count BIGINT;
+BEGIN
+  SELECT COUNT(*) INTO new_count
+  FROM emoji_likes
+  WHERE emoji_likes.emoji_id = $1;
+
+  UPDATE emojis
+  SET likes_count = new_count
+  WHERE id = $1;
+
+  RETURN QUERY SELECT new_count AS likes_count;
+END;
+$$ LANGUAGE plpgsql;
+
+3 functions related to likes count
+-- Function to increment likes_count
+CREATE OR REPLACE FUNCTION increment_emoji_likes(emoji_id BIGINT)
+RETURNS void AS $$
+BEGIN
+  UPDATE emojis
+  SET likes_count = likes_count + 1
+  WHERE id = emoji_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to decrement likes_count
+CREATE OR REPLACE FUNCTION decrement_emoji_likes(emoji_id BIGINT)
+RETURNS void AS $$
+BEGIN
+  UPDATE emojis
+  SET likes_count = GREATEST(likes_count - 1, 0)
+  WHERE id = emoji_id;
+END;
+$$ LANGUAGE plpgsql;
 
 # Requirements
 1. Create user to user table
