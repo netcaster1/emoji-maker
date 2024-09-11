@@ -1,43 +1,44 @@
 'use client'
-
-import { useEffect, useState } from 'react'
-import { fetchEmojis, likeEmoji } from '@/lib/api'
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useEffect, useState, Dispatch, SetStateAction, useCallback } from 'react'
+import { likeEmoji } from '@/lib/api'
 import Image from 'next/image'
-import { Heart, Download } from 'lucide-react'
+import { Heart, Download  } from 'lucide-react'
 import { Button } from './ui/button'
 import { toast } from 'react-hot-toast' // Make sure to install and set up react-hot-toast
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-interface Emoji {
+export interface Emoji {
   id: number
   image_url: string
   prompt: string
   likes_count: number
+  isLoading?: boolean
+  hasError?: boolean
 }
 
-export default function EmojiGrid() {
-  const [emojis, setEmojis] = useState<Emoji[]>([])
+interface EmojiGridProps {
+  emojis: Emoji[];
+  setEmojis: Dispatch<SetStateAction<Emoji[]>>;
+}
+
+export function EmojiGrid({ emojis, setEmojis }: EmojiGridProps) {
   const [error, setError] = useState<string | null>(null)
+  const [localEmojis, setLocalEmojis] = useState<Emoji[]>(emojis)
 
   useEffect(() => {
-    const loadEmojis = async () => {
-      try {
-        const { emojis } = await fetchEmojis()
-        setEmojis(emojis)
-      } catch (error) {
-        console.error('Error loading emojis:', error)
-        setError('Failed to load emojis')
-        toast.error('Failed to load emojis')
-      }
-    }
-
-    loadEmojis()
-  }, [])
+    setLocalEmojis(emojis)
+  }, [emojis])
 
   const handleLike = async (emojiId: number) => {
     try {
       const response = await likeEmoji(emojiId)
-      setEmojis(emojis.map(emoji => 
+      setLocalEmojis(prevEmojis => prevEmojis.map(emoji => 
+        emoji.id === emojiId 
+          ? { ...emoji, likes_count: response.likes_count } 
+          : emoji
+      ))
+      setEmojis(prevEmojis => prevEmojis.map(emoji => 
         emoji.id === emojiId 
           ? { ...emoji, likes_count: response.likes_count } 
           : emoji
@@ -94,6 +95,43 @@ export default function EmojiGrid() {
     toast.success('Emoji download started!')
   }
 
+  const retryLoadImage = useCallback((emoji: Emoji) => {
+    setEmojis(prevEmojis => prevEmojis.map(e => 
+      e.id === emoji.id ? { ...e, isLoading: true, hasError: false } : e
+    ));
+    
+    const checkImage = async (retries = 5) => {
+      if (retries === 0) {
+        throw new Error('Image not available after multiple attempts');
+      }
+
+      try {
+        const response = await fetch(emoji.image_url);
+        if (response.ok) {
+          const blob = await response.blob();
+          if (blob.type.startsWith('image/')) {
+            setEmojis(prevEmojis => prevEmojis.map(e => 
+              e.id === emoji.id ? { ...e, isLoading: false, hasError: false } : e
+            ));
+            return;
+          }
+        }
+        throw new Error('Image not ready yet');
+      } catch (error) {
+        console.error(`Attempt ${6 - retries} failed:`, error);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await checkImage(retries - 1);
+      }
+    };
+
+    checkImage().catch(() => {
+      setEmojis(prevEmojis => prevEmojis.map(e => 
+        e.id === emoji.id ? { ...e, isLoading: false, hasError: true } : e
+      ));
+      toast.error('Failed to load image after multiple attempts');
+    });
+  }, [setEmojis]);
+
   if (error) {
     return <div className="text-red-500 text-center my-4">{error}</div>
   }
@@ -101,27 +139,36 @@ export default function EmojiGrid() {
   return (
     <Tooltip.Provider>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {emojis.map((emoji) => (
+        {localEmojis.map((emoji) => (
           <div key={emoji.id} className="flex flex-col">
             <div className="relative aspect-square group">
-              <Image
-                src={emoji.image_url}
-                alt={emoji.prompt}
-                layout="fill"
-                objectFit="cover"
-                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                className="rounded-lg"
-                onError={() => {
-                  console.error(`Failed to load image: ${emoji.image_url}`);
-                  toast.error(`Failed to load emoji image`);
-                }}
-              />
+              {emoji.isLoading ? (
+                <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-500">Loading image...</span>
+                </div>
+              ) : (
+                <Image
+                  src={emoji.image_url}
+                  alt={emoji.prompt || 'Emoji'}
+                  layout="fill"
+                  objectFit="cover"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                  className="rounded-lg"
+                  onError={() => {
+                    console.error(`Failed to load image: ${emoji.image_url}`);
+                    setEmojis(prevEmojis => prevEmojis.map(e => 
+                      e.id === emoji.id ? { ...e, isLoading: false, hasError: true } : e
+                    ));
+                  }}
+                />
+              )}
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => handleDownload(emoji.image_url, emoji.prompt)}
+                  onClick={() => emoji.image_url && handleDownload(emoji.image_url, emoji.prompt)}
                   className="text-white hover:text-blue-500"
+                  disabled={!emoji.image_url}
                 >
                   <Download className="h-4 w-4" />
                 </Button>
@@ -131,7 +178,7 @@ export default function EmojiGrid() {
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
                   <p className="text-sm font-medium text-gray-700 truncate flex-grow cursor-help">
-                    {emoji.prompt}
+                    {emoji.prompt || 'No prompt'}
                   </p>
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
@@ -139,7 +186,7 @@ export default function EmojiGrid() {
                     className="bg-white p-2 rounded shadow-lg z-50 max-w-xs text-sm text-gray-800"
                     sideOffset={5}
                   >
-                    {emoji.prompt}
+                    {emoji.prompt || 'No prompt'}
                     <Tooltip.Arrow className="fill-white" />
                   </Tooltip.Content>
                 </Tooltip.Portal>

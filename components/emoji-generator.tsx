@@ -5,9 +5,9 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Card } from './ui/card'
 import { Loader2 } from 'lucide-react'
-import { generateEmoji, fetchEmojis } from '@/lib/api'
+// import { generateEmoji } from '@/lib/api'
 
-export default function EmojiGenerator({ onNewEmoji }: { onNewEmoji: () => void }) {
+export default function EmojiGenerator({ onNewEmoji }: { onNewEmoji: (prompt: string) => Promise<void> }) {
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -15,8 +15,7 @@ export default function EmojiGenerator({ onNewEmoji }: { onNewEmoji: () => void 
     e.preventDefault()
     setIsLoading(true)
     try {
-      await generateEmoji(prompt)
-      onNewEmoji() // Call this function to trigger a refresh of the emoji grid
+      await onNewEmoji(prompt)
     } catch (error) {
       console.error('Error generating emoji:', error)
     } finally {

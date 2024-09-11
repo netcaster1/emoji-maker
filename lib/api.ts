@@ -1,25 +1,47 @@
-export async function generateEmoji(prompt: string) {
-  const response = await fetch('/api/generate-emoji', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ prompt }),
-  })
+import { Emoji } from '@/components/emoji-grid';
 
-  if (!response.ok) {
-    throw new Error('Failed to generate emoji')
+let isGenerating = false;
+
+export async function generateEmoji(prompt: string): Promise<Partial<Emoji>> {
+  if (isGenerating) {
+    throw new Error('An emoji is already being generated. Please wait.');
   }
 
-  return response.json()
+  isGenerating = true;
+
+  try {
+    const response = await fetch('/api/generate-emoji', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate emoji');
+    }
+
+    const data = await response.json();
+
+    return {
+      id: data.id || Date.now(),
+      image_url: data.image_url || '',
+      prompt: data.prompt || prompt,
+      likes_count: data.likes_count || 0,
+      isLoading: true
+    };
+  } finally {
+    isGenerating = false;
+  }
 }
 
-export async function fetchEmojis() {
-  const response = await fetch('/api/emojis')
+export async function fetchEmojis(): Promise<{ emojis: Emoji[] }> {
+  const response = await fetch('/api/emojis');
   if (!response.ok) {
-    throw new Error('Failed to fetch emojis')
+    throw new Error('Failed to fetch emojis');
   }
-  return response.json()
+  return response.json();
 }
 
 export async function likeEmoji(emojiId: number) {

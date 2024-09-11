@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { supabase } from './supabase'
 
 export async function uploadEmojiImage(buffer: Buffer, fileName: string) {
@@ -41,4 +43,11 @@ export async function addEmojiToDatabase(imageUrl: string, prompt: string, userI
   }
 
   return data
+}
+
+export async function getEmojis() {
+  const response = await fetch('https://api.example.com/emojis');
+  const data = await response.json();
+  // Use 'data' here or return it
+  return data;
 }

@@ -73,3 +73,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to generate emoji' }, { status: 500 })
   }
 }
+
+// export const runtime = 'edge';
+export const maxDuration = 300;
