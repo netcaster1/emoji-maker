@@ -45,31 +45,65 @@ console.log(output);
 # Current File structure (you HAVE TO follow structure below)
 
 EMOJI-MAKER
-  ├── .next
-  ├── app
-  │   ├── fonts
-  │   ├── favicon.ico
-  │   ├── globals.css
-  │   ├── layout.tsx
-  │   └── page.tsx
-  ├── components
-  │   └── ui
-  │       ├── button.tsx
-  │       ├── card.tsx
-  │       └── input.tsx
-  ├── lib
-  ├── node_modules
-  ├── requirements
-  ├── .eslintrc.json
-  ├── .gitignore
-  ├── components.json
-  ├── next-env.d.ts
-  ├── next.config.mjs
-  ├── package.json
-  ├── postcss.config.mjs
-  ├── README.md
-  ├── tailwind.config.ts
-  └── tsconfig.json
+├── app
+│   ├── api
+│   │   ├── auth
+│   │   │   └── route.ts
+│   │   ├── download-emoji
+│   │   │   └── route.ts
+│   │   ├── emojis
+│   │   │   ├── [id]
+│   │   │   │   └── like
+│   │   │   └── route.ts
+│   │   └── generate-emoji
+│   │       └── route.ts
+│   ├── (auth)
+│   │   ├── sign-in
+│   │   │   └── [[...sign-in]]
+│   │   │       └── page.tsx
+│   │   └── sign-up
+│   │       └── [[...sign-up]]
+│   │           └── page.tsx
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── GeistMonoVF.woff
+│   │   └── GeistVF.woff
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components
+│   ├── AuthWrapper.tsx
+│   ├── emoji-generator.tsx
+│   ├── emoji-grid.tsx
+│   ├── headers.tsx
+│   └── ui
+│       ├── button.tsx
+│       ├── card.tsx
+│       └── input.tsx
+├── components.json
+├── contexts
+│   └── emoji-context.tsx
+├── lib
+│   ├── api.ts
+│   ├── emoji.ts
+│   ├── supabase-auth.ts
+│   ├── supabase.ts
+│   ├── user.ts
+│   └── utils.ts
+├── middleware.ts
+├── next.config.js
+├── next.config.mjs
+├── next-env.d.ts
+├── package.json
+├── package-lock.json
+├── postcss.config.mjs
+├── README.md
+├── requirements
+│   ├── backend_instructions.md
+│   └── frontend_instructions.md
+├── tailwind.config.ts
+├── tsconfig.json
+└── types.d.ts
 
 # Rules
 - All new components should go in /components and be named like example-component.tsx unless otherwise specified

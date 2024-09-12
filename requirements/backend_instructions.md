@@ -33,6 +33,7 @@ TABLE emoji_likes (
   PRIMARY KEY (user_id, emoji_id)
 );
 
+# functions in database to handle like/dislike status
 CREATE OR REPLACE FUNCTION update_emoji_likes_count(emoji_id BIGINT)
 RETURNS TABLE (likes_count BIGINT) AS $$
 DECLARE
