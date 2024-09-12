@@ -74,5 +74,5 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// export const runtime = 'edge';
-// export const maxDuration = 300;
+export const runtime = 'edge';
+export const maxDuration = 60;
