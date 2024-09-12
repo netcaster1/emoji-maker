@@ -5,7 +5,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Card } from './ui/card'
 import { Loader2 } from 'lucide-react'
-// import { generateEmoji } from '@/lib/api'
+import Image from 'next/image'
 
 interface EmojiGeneratorProps {
   onNewEmoji: (prompt: string) => Promise<void>
@@ -14,14 +14,40 @@ interface EmojiGeneratorProps {
 export default function EmojiGenerator({ onNewEmoji }: EmojiGeneratorProps) {
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [generatedEmoji, setGeneratedEmoji] = useState<{ image_url: string; prompt: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setGeneratedEmoji(null)
+    setError(null)
     try {
-      await onNewEmoji(prompt)
+      const response = await fetch('/api/generate-emoji', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate emoji')
+      }
+
+      const data = await response.json()
+      if (data.success && data.emoji) {
+        setGeneratedEmoji({
+          image_url: data.emoji.image_url,
+          prompt: data.emoji.prompt,
+        })
+        await onNewEmoji(data.emoji.prompt) // Notify parent component
+      } else {
+        throw new Error(data.error || 'Failed to generate emoji')
+      }
     } catch (error) {
       console.error('Error generating emoji:', error)
+      setError('Failed to generate emoji. Please try again.')
     } finally {
       setIsLoading(false)
       setPrompt('') // Clear the input after generation
@@ -49,6 +75,21 @@ export default function EmojiGenerator({ onNewEmoji }: EmojiGeneratorProps) {
           )}
         </Button>
       </form>
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {generatedEmoji && (
+        <div className="mt-4">
+          <div className="relative w-32 h-32 mx-auto">
+            <Image
+              src={generatedEmoji.image_url}
+              alt={generatedEmoji.prompt}
+              fill
+              style={{ objectFit: 'contain' }}
+              className="rounded-lg"
+            />
+          </div>
+          <p className="text-center mt-2 text-sm text-gray-600">{generatedEmoji.prompt}</p>
+        </div>
+      )}
     </Card>
   )
 }

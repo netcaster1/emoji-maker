@@ -19,8 +19,10 @@ export default function Home() {
   const [emojis, setEmojis] = useState<Emoji[]>([]);
 
   const onNewEmoji = async (prompt: string) => {
-    const newEmoji = await generateEmoji(prompt);
-    setEmojis(prev => [...prev, newEmoji as Emoji]);
+    // This function is now just for updating the local state
+    // The actual API call is handled in the EmojiGenerator component
+    const freshEmojis = await fetchEmojis();
+    setEmojis(freshEmojis);
   };
 
   return (
@@ -33,4 +35,12 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+async function checkEmojiStatus(id: number): Promise<Emoji> {
+  const response = await fetch(`/api/emoji-status/${id}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch emoji status');
+  }
+  return await response.json();
 }
