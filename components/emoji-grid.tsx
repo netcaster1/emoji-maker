@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState, Dispatch, SetStateAction, useCallback } from 'react'
-import { likeEmoji } from '@/lib/api'
+import { likeEmoji, fetchEmojis } from '@/lib/api'
 import Image from 'next/image'
 import { Heart, Download  } from 'lucide-react'
 import { Button } from './ui/button'
@@ -18,22 +18,34 @@ export interface Emoji {
 }
 
 interface EmojiGridProps {
-  emojis: Emoji[];
-  setEmojis: Dispatch<SetStateAction<Emoji[]>>;
+  initialEmojis: Emoji[];
 }
 
-export function EmojiGrid({ emojis, setEmojis }: EmojiGridProps) {
-  const [error, setError] = useState<string | null>(null)
-  const [localEmojis, setLocalEmojis] = useState<Emoji[]>(emojis)
+export default function EmojiGrid({ initialEmojis }: EmojiGridProps) {
+  const [emojis, setEmojis] = useState<Emoji[]>(initialEmojis);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLocalEmojis(emojis)
-  }, [emojis])
+    const refreshEmojis = async () => {
+      try {
+        const freshEmojis = await fetchEmojis();
+        setEmojis(freshEmojis);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch emojis');
+      }
+    };
+
+    // Refresh emojis every 10 seconds
+    const intervalId = setInterval(refreshEmojis, 10000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleLike = async (emojiId: number) => {
     try {
       const response = await likeEmoji(emojiId)
-      setLocalEmojis(prevEmojis => prevEmojis.map(emoji => 
+      setEmojis(prevEmojis => prevEmojis.map(emoji => 
         emoji.id === emojiId 
           ? { ...emoji, likes_count: response.likes_count } 
           : emoji
@@ -139,7 +151,7 @@ export function EmojiGrid({ emojis, setEmojis }: EmojiGridProps) {
   return (
     <Tooltip.Provider>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {localEmojis.map((emoji) => (
+        {emojis.map((emoji) => (
           <div key={emoji.id} className="flex flex-col">
             <div className="relative aspect-square group">
               {emoji.isLoading ? (
@@ -150,8 +162,8 @@ export function EmojiGrid({ emojis, setEmojis }: EmojiGridProps) {
                 <Image
                   src={emoji.image_url}
                   alt={emoji.prompt || 'Emoji'}
-                  layout="fill"
-                  objectFit="cover"
+                  fill
+                  style={{ objectFit: 'cover' }}
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                   className="rounded-lg"
                   onError={() => {

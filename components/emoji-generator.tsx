@@ -7,7 +7,11 @@ import { Card } from './ui/card'
 import { Loader2 } from 'lucide-react'
 // import { generateEmoji } from '@/lib/api'
 
-export default function EmojiGenerator({ onNewEmoji }: { onNewEmoji: (prompt: string) => Promise<void> }) {
+interface EmojiGeneratorProps {
+  onNewEmoji: (prompt: string) => Promise<void>
+}
+
+export default function EmojiGenerator({ onNewEmoji }: EmojiGeneratorProps) {
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 

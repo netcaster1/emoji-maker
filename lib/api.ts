@@ -1,4 +1,10 @@
 import { Emoji } from '@/components/emoji-grid';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 let isGenerating = false;
 
@@ -36,12 +42,24 @@ export async function generateEmoji(prompt: string): Promise<Partial<Emoji>> {
   }
 }
 
-export async function fetchEmojis(): Promise<{ emojis: Emoji[] }> {
-  const response = await fetch('/api/emojis');
-  if (!response.ok) {
-    throw new Error('Failed to fetch emojis');
-  }
-  return response.json();
+// export async function fetchEmojis(): Promise<{ emojis: Emoji[] }> {
+//   const { data, error } = await supabase
+//     .from('emojis')
+//     .select('*')
+//     .order('created_at', { ascending: false });
+
+//   if (error) throw error;
+//   return { emojis: data as Emoji[] };
+// }
+
+export async function fetchEmojis(): Promise<Emoji[]> {
+  const { data, error } = await supabase
+    .from('emojis')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data as Emoji[];
 }
 
 export async function likeEmoji(emojiId: number) {
